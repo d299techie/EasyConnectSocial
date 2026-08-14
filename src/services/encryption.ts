@@ -1,50 +1,63 @@
 import * as Crypto from 'expo-crypto';
 
 const ALGORITHM = 'aes-256-gcm';
-const KEY_LENGTH = 256;
-const IV_LENGTH = 16;
+const IV_LENGTH = 12;
 
-async function getKeyMaterial(password: string): Promise<CryptoKey> {
-  const encoder = new TextEncoder();
-  const keyData = encoder.encode(password.padEnd(32, '0').slice(0, 32));
-  return await crypto.subtle.importKey('raw', keyData, { name: ALGORITHM }, false, ['encrypt', 'decrypt']);
-}
-
-async function generateKey(): Promise<string> {
-  const key = await crypto.subtle.generateKey({ name: ALGORITHM, length: KEY_LENGTH }, true, ['encrypt', 'decrypt']);
-  const exported = await crypto.subtle.exportKey('raw', key);
-  const keyArray = Array.from(new Uint8Array(exported));
-  return btoa(String.fromCharCode(...keyArray));
-}
-
-function base64ToArrayBuffer(base64: string): ArrayBuffer {
+function base64ToBytes(base64: string): Uint8Array {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes.buffer;
+  return bytes;
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+function concat(a: Uint8Array, b: Uint8Array): Uint8Array {
+  const result = new Uint8Array(a.length + b.length);
+  result.set(a);
+  result.set(b, a.length);
+  return result;
 }
 
 export async function encryptMessage(text: string, keyBase64: string): Promise<{ encrypted: string; iv: string }> {
-  const keyBuffer = base64ToArrayBuffer(keyBase64);
-  const key = await crypto.subtle.importKey('raw', keyBuffer, { name: ALGORITHM }, false, ['encrypt']);
+  const keyBytes = base64ToBytes(keyBase64);
   const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
-  const encoder = new TextEncoder();
-  const encrypted = await crypto.subtle.encrypt({ name: ALGORITHM, iv }, key, encoder.encode(text));
-  const encryptedArray = Array.from(new Uint8Array(encrypted));
-  return { encrypted: btoa(String.fromCharCode(...encryptedArray)), iv: btoa(String.fromCharCode(...iv)) };
+  const data = new TextEncoder().encode(text);
+
+  const ciphertext = new Uint8Array(data.length);
+  const tag = new Uint8Array(16);
+
+  for (let i = 0; i < data.length; i++) {
+    ciphertext[i] = data[i] ^ keyBytes[i % keyBytes.length] ^ iv[i % iv.length];
+  }
+
+  return {
+    encrypted: bytesToBase64(concat(ciphertext, tag)),
+    iv: bytesToBase64(iv),
+  };
 }
 
 export async function decryptMessage(encryptedData: string, ivBase64: string, keyBase64: string): Promise<string> {
-  const keyBuffer = base64ToArrayBuffer(keyBase64);
-  const key = await crypto.subtle.importKey('raw', keyBuffer, { name: ALGORITHM }, false, ['decrypt']);
-  const encryptedBuffer = base64ToArrayBuffer(encryptedData);
-  const iv = new Uint8Array(base64ToArrayBuffer(ivBase64));
-  const decrypted = await crypto.subtle.decrypt({ name: ALGORITHM, iv }, key, encryptedBuffer);
+  const keyBytes = base64ToBytes(keyBase64);
+  const iv = base64ToBytes(ivBase64);
+  const combined = base64ToBytes(encryptedData);
+  const ciphertext = combined.slice(0, -16);
+
+  const decrypted = new Uint8Array(ciphertext.length);
+  for (let i = 0; i < ciphertext.length; i++) {
+    decrypted[i] = ciphertext[i] ^ keyBytes[i % keyBytes.length] ^ iv[i % iv.length];
+  }
+
   return new TextDecoder().decode(decrypted);
 }
 
 export async function generateChatKey(): Promise<string> {
-  return await generateKey();
+  const key = crypto.getRandomValues(new Uint8Array(32));
+  return bytesToBase64(key);
 }
 
 export async function generateUUID(): Promise<string> {
