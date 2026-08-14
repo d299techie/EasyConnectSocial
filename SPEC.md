@@ -350,11 +350,14 @@ Collections:
 - Name: "EasyConnectSocial", slug: "easyconnectsocial"
 - Dark UI (userInterfaceStyle: "dark")
 - Deep link scheme: `easyconnectsocial`
-- Plugins: secure-store, image-picker, clipboard, sharing, av, notifications
+- Owner: `d299techie`
+- EAS project ID: `dbd043bf-e8f7-4242-bf77-66e554fa6804`
+- Plugins: secure-store, image-picker, sharing, av, notifications
+- Android permissions: `RECORD_AUDIO`, `MODIFY_AUDIO_SETTINGS`
 
 ### `eas.json`
 - Profiles: development (dev client), preview (APK), production (APK)
-- EAS CLI ≥ 3.0.0
+- EAS CLI ≥ 3.0.0, `cli.appVersionSource: "local"`
 
 ### Environment Variables (`.env.example`)
 ```
@@ -368,15 +371,16 @@ EXPO_PUBLIC_FIREBASE_APP_ID
 
 ### CI/CD (`.github/workflows/build-apk.yml`)
 - Triggers: push to main/master, manual dispatch
-- Steps: checkout → Node 20 → Expo/EAS setup → `npm ci` → `eas build --platform android --profile preview`
-- Firebase secrets injected as env vars
+- Steps: checkout → setup Node → Expo/EAS setup → `npm ci` → `eas build --platform android --profile preview`
+- Requires `EXPO_TOKEN` and `FIREBASE_*` GitHub secrets
+- Expo project: https://expo.dev/accounts/d299techie/projects/easyconnectsocial
 
 ### Dependencies (Key)
 - `expo`, `react-native`, `react`
 - `firebase` (v12)
 - `@react-navigation/*` (v7)
 - `react-native-gesture-handler`, `react-native-reanimated`, `react-native-screens`
-- `expo-av`, `expo-clipboard`, `expo-crypto`, `expo-file-system`, `expo-image-picker`, `expo-notifications`, `expo-secure-store`, `expo-sharing`
+- `expo-av`, `expo-clipboard`, `expo-crypto`, `expo-file-system`, `expo-image-picker`, `expo-modules-core`, `expo-notifications`, `expo-secure-store`, `expo-sharing`
 
 ---
 

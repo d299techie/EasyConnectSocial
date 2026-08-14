@@ -18,7 +18,7 @@
 
 ```bash
 # 1. Clone and enter project
-git clone <repo-url> EasyConnectSocial
+git clone https://github.com/d299techie/EasyConnectSocial.git
 cd EasyConnectSocial
 
 # 2. Install dependencies
@@ -173,18 +173,35 @@ The project includes `.github/workflows/build-apk.yml` for automated builds.
 
 ### GitHub Secrets Required
 
-| Secret | Value |
-|--------|-------|
-| `EXPO_TOKEN` | EAS auth token (`eas login` → `eas whoami` → copy token) |
-| `FIREBASE_API_KEY` | From Firebase config |
-| `FIREBASE_AUTH_DOMAIN` | From Firebase config |
-| `FIREBASE_PROJECT_ID` | From Firebase config |
-| `FIREBASE_STORAGE_BUCKET` | From Firebase config |
-| `FIREBASE_MESSAGING_SENDER_ID` | From Firebase config |
-| `FIREBASE_APP_ID` | From Firebase config |
+| Secret | Value | Source |
+|--------|-------|--------|
+| `EXPO_TOKEN` | Expo access token | https://expo.dev/settings/access-tokens → Create token |
+| `FIREBASE_API_KEY` | `apiKey` from Firebase config | Firebase Console → Project Settings → Web app |
+| `FIREBASE_AUTH_DOMAIN` | `authDomain` from Firebase config | ^ |
+| `FIREBASE_PROJECT_ID` | `projectId` from Firebase config | ^ |
+| `FIREBASE_STORAGE_BUCKET` | `storageBucket` from Firebase config | ^ |
+| `FIREBASE_MESSAGING_SENDER_ID` | `messagingSenderId` from Firebase config | ^ |
+| `FIREBASE_APP_ID` | `appId` from Firebase config | ^ |
+
+### Expō Token (EXPO_TOKEN)
+
+1. Go to https://expo.dev/settings/access-tokens
+2. Click **"Create token"** → name it `GitHub Actions`
+3. Copy the generated token → add as `EXPO_TOKEN` in GitHub secrets
 
 ### Manual Build
 Push to `main`/`master` or go to Actions → "Build APK" → Run workflow.
+
+---
+
+## Viewing Builds
+
+- **GitHub Actions**: https://github.com/d299techie/EasyConnectSocial/actions
+- **EAS Dashboard**: https://expo.dev/accounts/d299techie/projects/easyconnectsocial/builds
+
+---
+
+## Troubleshooting
 
 ---
 
@@ -198,6 +215,14 @@ npx expo install expo-clipboard expo-crypto expo-file-system expo-image-picker e
 ### Firebase "auth/configuration-not-found"
 - Verify Email/Password auth is enabled in Firebase Console
 - Check `.env.local` values match Firebase project
+
+### EAS Build fails — `expo config --json` exited with non-zero code
+- Ensure `expo-clipboard` is removed from `app.json` "plugins" array (it has no config plugin)
+- Run `npx expo install expo-modules-core` to ensure the dependency is present
+- Push with updated `package-lock.json`
+
+### EAS Build fails — `Invalid UUID appId`
+- Remove `"projectId": "YOUR_EAS_PROJECT_ID"` from `app.json` and run `npx eas init --account <your-account> --non-interactive` to get a real project ID
 
 ### EAS Build fails
 ```bash
